@@ -27,17 +27,18 @@ def test_sanity() -> None:
 def test_largest_cursor() -> None:
     magic = b"\x00\x00\x02\x00"
     sizes = ((1, 1), (8, 8), (4, 4))
-    data = magic + o16(len(sizes))
-    for w, h in sizes:
-        image_offset = 6 + len(sizes) * 16 if (w, h) == max(sizes) else 0
-        data += o8(w) + o8(h) + o8(0) * 10 + o32(image_offset)
-    data += (
+    data = bytearray(magic + o16(len(sizes)))
+    image_data = (
         o32(12)  # header size
         + o16(8)  # width
         + o16(16)  # height
         + o16(0)  # planes
         + o16(1)  # bits
     )
+    image_offset = len(data) + len(sizes) * 16
+    for w, h in sizes:
+        data += o8(w) + o8(h) + o8(0) * 10 + o32(image_offset)
+    data += image_data
     with Image.open(BytesIO(data)) as im:
         assert im.size == (8, 8)
 
