@@ -128,7 +128,7 @@ encode_bc1_color(Imaging im, ImagingCodecState state, UINT8 *dst, int separate_a
                 continue;
             }
             if (transparency) {
-                distance *= 4 / total;
+                distance *= 4.0f / total;
                 if (distance < 1) {
                     // color_max
                 } else if (distance < 3) {
@@ -137,7 +137,7 @@ encode_bc1_color(Imaging im, ImagingCodecState state, UINT8 *dst, int separate_a
                     l |= 1 << (j * 2);  // color_min
                 }
             } else {
-                distance *= 6 / total;
+                distance *= 6.0f / total;
                 if (distance < 1) {
                     l |= 1 << (j * 2);  // color_min
                 } else if (distance < 3) {
@@ -259,7 +259,7 @@ ImagingBcnEncode(Imaging im, ImagingCodecState state, UINT8 *buf, int bytes) {
 
     for (;;) {
         // Loop writes a max of 16 bytes per iteration
-        if (dst + 16 >= bytes + buf) {
+        if (dst + 16 > bytes + buf) {
             break;
         }
         if (n == 5) {

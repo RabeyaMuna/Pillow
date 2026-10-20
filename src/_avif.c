@@ -369,7 +369,7 @@ AvifEncoderNew(PyObject *self_, PyObject *args) {
         image->colorPrimaries = AVIF_COLOR_PRIMARIES_BT709;
         image->transferCharacteristics = AVIF_TRANSFER_CHARACTERISTICS_SRGB;
     }
-    image->matrixCoefficients = AVIF_MATRIX_COEFFICIENTS_BT601;
+    image->matrixCoefficients = AVIF_MATRIX_COEFFICIENTS_BT709;
 
     if (exif_buffer.len) {
         result = avifImageSetMetadataExif(image, exif_buffer.buf, exif_buffer.len);

@@ -45,9 +45,10 @@ if $PKGCONFIG --exists SvtAv1Enc; then
     HAS_ENCODER=1
 fi
 
-if [ "$HAS_ENCODER" != 1 ] || [ "$HAS_DECODER" != 1 ]; then
-    LIBAVIF_CMAKE_FLAGS+=(-DAVIF_CODEC_AOM=LOCAL)
-fi
+# Always build AOM locally to ensure a consistent encoder across platforms.
+# Relying on system encoders (e.g. rav1e or SvtAv1Enc) can produce slightly
+# different output that exceeds the AVIF write round-trip test tolerance.
+LIBAVIF_CMAKE_FLAGS+=(-DAVIF_CODEC_AOM=LOCAL)
 
 cmake \
     -DCMAKE_INSTALL_PREFIX=$PREFIX \
