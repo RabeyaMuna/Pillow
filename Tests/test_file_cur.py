@@ -28,16 +28,58 @@ def test_largest_cursor() -> None:
     magic = b"\x00\x00\x02\x00"
     sizes = ((1, 1), (8, 8), (4, 4))
     data = magic + o16(len(sizes))
+
+    # Build images (DIBs) for each size and collect directory entries
+    images = []
     for w, h in sizes:
-        image_offset = 6 + len(sizes) * 16 if (w, h) == max(sizes) else 0
-        data += o8(w) + o8(h) + o8(0) * 10 + o32(image_offset)
-    data += (
-        o32(12)  # header size
-        + o16(8)  # width
-        + o16(16)  # height
-        + o16(0)  # planes
-        + o16(1)  # bits
-    )
+        # Create a BITMAPINFOHEADER (40 bytes) for a 32bpp DIB.
+        # For icons/cursors, the stored height is doubled (height * 2).
+        dib = (
+            o32(40)  # header size
+            + o32(w)  # width
+            + o32(h * 2)  # height (icon stores height*2)
+            + o16(1)  # planes
+            + o16(32)  # bits per pixel
+            + o32(0)  # compression (BI_RGB)
+            + o32(w * h * 4)  # size image (raw pixels)
+            + o32(0)  # x pixels per meter
+            + o32(0)  # y pixels per meter
+            + o32(0)  # colors used
+            + o32(0)  # important colors
+        )
+        # Pixel data (zeroed) and AND mask (1-bit per pixel, padded to 32-bit boundaries per row)
+        pixels = b"\x00" * (w * h * 4)
+        mask_row_bytes = ((w + 31) // 32) * 4
+        mask = b"\x00" * (mask_row_bytes * h)
+        img = dib + pixels + mask
+        images.append(img)
+
+    # Compute offsets and write directory entries with valid size and offset fields
+    offset = 6 + 16 * len(sizes)  # header (6 bytes) + directory entries
+    entries = []
+    for img, (w, h) in zip(images, sizes):
+        size_in_res = len(img)
+        # CUR directory entry layout: width(1), height(1), color count(1), reserved(1),
+        # hotspot_x(2), hotspot_y(2), size_in_res(4), image_offset(4)
+        entry = (
+            o8(w)
+            + o8(h)
+            + o8(0)
+            + o8(0)
+            + o16(0)
+            + o16(0)
+            + o32(size_in_res)
+            + o32(offset)
+        )
+        entries.append(entry)
+        offset += size_in_res
+
+    # Append directory entries and image data
+    for entry in entries:
+        data += entry
+    for img in images:
+        data += img
+
     with Image.open(BytesIO(data)) as im:
         assert im.size == (8, 8)
 
